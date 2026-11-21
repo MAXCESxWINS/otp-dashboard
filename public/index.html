@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OTP Dashboard</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #111821;
+    --panel-2: #0e151d;
+    --line: #1e2a36;
+    --text: #e6edf5;
+    --muted: #7d8b9c;
+    --accent: #4fd1c5;
+    --accent-2: #63b3ed;
+    --danger: #f56565;
+    --ok: #48bb78;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: radial-gradient(1200px 600px at 20% -10%, #10202b 0%, var(--bg) 55%) fixed;
+    color: var(--text);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 38px; height: 38px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; color: #04121a; font-weight: 800; font-size: 17px;
+  }
+  h1 { font-size: 18px; margin: 0; letter-spacing: .2px; }
+  .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px;
+    border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+    color: var(--muted); font-size: 12px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+  .dot.live { background: var(--ok); box-shadow: 0 0 0 4px rgba(72,187,120,.15); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .stat .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  .stat .v { font-size: 22px; font-weight: 700; margin-top: 6px; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  input, select, button {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; font: inherit; outline: none;
+  }
+  input:focus, select:focus { border-color: #2f4a5c; }
+  input { flex: 1; min-width: 200px; }
+  select { min-width: 170px; }
+  .btn { cursor: pointer; color: var(--muted); }
+  .btn:hover { color: var(--text); border-color: #2f4a5c; }
+  .feed { display: flex; flex-direction: column; gap: 10px; }
+  .card {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px;
+    animation: in .25s ease-out;
+  }
+  @keyframes in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 9px; flex: 0 0 auto;
+    background: #1b2a38; color: var(--accent); display: grid; place-items: center;
+    font-weight: 700; font-size: 12px; text-transform: uppercase;
+  }
+  .sender { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .phone { color: var(--muted); font-size: 12px; }
+  .time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .msg { white-space: pre-wrap; word-break: break-word; color: #d7e2ee; }
+  .meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .chip {
+    font-size: 11px; color: var(--muted); border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px 9px; background: #0d141b;
+  }
+  .copy { margin-left: auto; font-size: 11px; color: var(--muted); background: none; border: none; cursor: pointer; }
+  .copy:hover { color: var(--accent); }
+  .empty { text-align: center; color: var(--muted); padding: 60px 20px; border: 1px dashed var(--line); border-radius: var(--radius); }
+  .err { color: var(--danger); font-size: 12px; }
+  footer { color: var(--muted); font-size: 11px; text-align: center; margin-top: 26px; }
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">OTP</div>
+      <div>
+        <h1>OTP Dashboard</h1>
+        <div class="sub">Live SMS feed &middot; real time</div>
+      </div>
+    </div>
+    <div class="pill"><span id="dot" class="dot"></span><span id="conn">connecting</span></div>
+  </header>
+
+  <section class="stats">
+    <div class="stat"><div class="k">Total</div><div class="v" id="s-total">0</div></div>
+    <div class="stat"><div class="k">Today</div><div class="v" id="s-today">0</div></div>
+    <div class="stat"><div class="k">Phones</div><div class="v" id="s-phones">0</div></div>
+    <div class="stat"><div class="k">Last seen</div><div class="v" id="s-last" style="font-size:14px">—</div></div>
+  </section>
+
+  <section class="toolbar">
+    <input id="search" type="search" placeholder="Search message, sender, phone…" autocomplete="off" />
+    <select id="phone-filter"><option value="">All phones</option></select>
+    <label class="btn" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)">
+      <input id="hide-test" type="checkbox" style="flex:none;min-width:0;width:14px;height:14px;padding:0" />
+      <span>Hide heartbeat</span>
+    </label>
+    <button class="btn" id="export" type="button">Export CSV</button>
+  </section>
+
+  <section class="feed" id="feed">
+    <div class="empty" id="empty">Waiting for the first message…</div>
+  </section>
+
+  <footer>Data stays on your server. Endpoint: <code>/api/ingest</code></footer>
+</div>
+
+<script>
+(() => {
+  const state = { messages: [], phones: new Set(), filter: '', phone: '', hideTest: false };
+  const $ = (id) => document.getElementById(id);
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+
+  const fmt = (ts) => {
+    if (!ts) return '—';
+    const d = new Date(Number(ts));
+    if (Number.isNaN(d.getTime())) return String(ts);
+    const now = Date.now();
+    const diff = Math.floor((now - d.getTime()) / 1000);
+    if (diff < 45) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return d.toLocaleString();
+  };
+
+  const initials = (s) => (s || '?').replace(/[^a-zA-Z0-9+]/g, '').slice(0, 2) || '?';
+
+  function refreshPhones() {
+    const sel = $('phone-filter');
+    const current = sel.value;
+    const opts = ['<option value="">All phones</option>'];
+    for (const p of [...state.phones].sort()) {
+      opts.push(`<option value="${esc(p)}">${esc(p)}</option>`);
+    }
+    sel.innerHTML = opts.join('');
+    sel.value = current;
+  }
+
+  function render() {
+    const feed = $('feed');
+    const q = state.filter.toLowerCase();
+    const rows = state.messages.filter((m) => {
+      if (state.hideTest && /^testData\d+$/i.test(m.message.trim())) return false;
+      if (state.phone && m.phone !== state.phone) return false;
+      if (!q) return true;
+      return [m.phone, m.sender, m.message, m.version].join(' ').toLowerCase().includes(q);
+    });
+
+    if (!rows.length) {
+      feed.innerHTML = `<div class="empty">${state.messages.length ? 'No matches for this filter.' : 'Waiting for the first message…'}</div>`;
+      return;
+    }
+
+    feed.innerHTML = rows.slice(0, 300).map((m) => `
+      <article class="card">
+        <div class="card-top">
+          <div class="who">
+            <div class="avatar">${esc(initials(m.sender || m.phone))}</div>
+            <div style="min-width:0">
+              <div class="sender">${esc(m.sender || 'unknown sender')}</div>
+              <div class="phone">${esc(m.phone || 'no phone')}</div>
+            </div>
+          </div>
+          <div class="time" title="${esc(new Date(m.receivedAt).toISOString())}">${esc(fmt(m.receivedAt))}</div>
+        </div>
+        <div class="msg">${esc(m.message)}</div>
+        <div class="meta">
+          ${m.battery !== null && m.battery !== undefined ? `<span class="chip">battery ${esc(m.battery)}%</span>` : ''}
+          ${m.status !== null && m.status !== undefined ? `<span class="chip">status ${esc(m.status)}</span>` : ''}
+          ${m.version ? `<span class="chip">${esc(/^v/i.test(m.version) ? m.version : 'v' + m.version)}</span>` : ''}
+          <button class="copy" data-copy="${esc(m.message)}" type="button">copy</button>
+        </div>
+      </article>
+    `).join('');
+  }
+
+  function updateStats() {
+    $('s-total').textContent = state.messages.length;
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    $('s-today').textContent = state.messages.filter((m) => m.receivedAt >= start.getTime()).length;
+    $('s-phones').textContent = state.phones.size;
+    const last = state.messages[0];
+    $('s-last').textContent = last ? fmt(last.receivedAt) : '—';
+  }
+
+  function addMessage(m) {
+    if (state.messages.some((x) => x.hash === m.hash)) return;
+    state.messages.unshift(m);
+    if (m.phone) state.phones.add(m.phone);
+    refreshPhones();
+    updateStats();
+    render();
+  }
+
+  async function boot() {
+    try {
+      const [msgRes, statRes] = await Promise.all([
+        fetch('/api/messages?limit=300'),
+        fetch('/api/stats'),
+      ]);
+      if (msgRes.status === 401) return;
+      const data = await msgRes.json();
+      state.messages = data.messages || [];
+      for (const m of state.messages) if (m.phone) state.phones.add(m.phone);
+      refreshPhones();
+      updateStats();
+      render();
+    } catch (err) {
+      $('feed').innerHTML = `<div class="empty err">Failed to load: ${esc(err.message)}</div>`;
+    }
+
+    const es = new EventSource('/api/stream');
+    es.addEventListener('hello', () => setConn(true));
+    es.addEventListener('message', (e) => {
+      try { addMessage(JSON.parse(e.data)); } catch {}
+    });
+    es.onopen = () => setConn(true);
+    es.onerror = () => setConn(false);
+  }
+
+  function setConn(live) {
+    $('dot').className = live ? 'dot live' : 'dot';
+    $('conn').textContent = live ? 'live' : 'reconnecting…';
+  }
+
+  $('search').addEventListener('input', (e) => { state.filter = e.target.value; render(); });
+  $('phone-filter').addEventListener('change', (e) => { state.phone = e.target.value; render(); });
+  $('hide-test').addEventListener('change', (e) => { state.hideTest = e.target.checked; render(); });
+  $('export').addEventListener('click', () => { window.location.href = '/api/export.csv'; });
+
+  $('feed').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-copy]');
+    if (!btn) return;
+    try {
+      await navigator.clipboard.writeText(btn.dataset.copy);
+      btn.textContent = 'copied';
+      setTimeout(() => { btn.textContent = 'copy'; }, 1200);
+    } catch {}
+  });
+
+  setInterval(updateStats, 30000);
+  boot();
+})();
+</script>
+</body>
+</html>

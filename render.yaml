@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: otp-dashboard
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: DASH_USER
+        value: admin
+      - key: DASH_PASS
+        generateValue: true
+      - key: INGEST_TOKEN
+        generateValue: true
+      - key: NODE_VERSION
+        value: 20.18.1
